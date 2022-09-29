@@ -2,16 +2,17 @@ package controllers
 
 import (
 	"SocialMediaTracker/models"
+	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+	"os"
 )
 
 type FollowerInput struct {
 	Follower  uint `json:"follower" binding:"required"`
 	AccountID uint `json:"AccountID" binding:"required"`
-	//Handle   string `json:"handle" binding:"required"`
-	//Platform string `json:"platform" binding:"required"`
 }
 
 func AddFollower(c *gin.Context) {
@@ -56,7 +57,6 @@ func GetFollowers(c *gin.Context) {
 	f.AccountID = input.AccountID
 
 	follower, err := models.GetFollowerByID(f.AccountID)
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -66,11 +66,68 @@ func GetFollowers(c *gin.Context) {
 
 }
 
-func Daily(c *gin.Context) {
-	// Do this all for each entry in account
+type IGResponse struct {
+	BusinessDiscovery struct {
+		FollowerCount uint `json:"follower_count"`
+	} `json:"business_discovery"`
+}
 
-	//Instagram API
-	resp, err := http.Get("https://graph.facebook.com/v3.2/17841405309211844?fields=business_discovery.username(bluebottle){followers_count}")
+func Daily(c *gin.Context) {
+	var update []FollowerInput
+
+	accounts, err := models.GetAllAccounts()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
+	AccessToken := os.Getenv("IG_ACCESS_TOKEN")
+
+	for _, account := range accounts {
+		if account.Platform == "IG" {
+			resp, err := http.Get(fmt.Sprintf("https://graph.facebook.com/v15.0/17841405309211844?fields=business_discovery.username(%s){followers_count,media_count}&access_token=%s", account.Handle, AccessToken))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+
+			var res IGResponse
+			if err := json.Unmarshal(body, &res); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			}
+
+			//c.JSON(http.StatusOK, gin.H{"data": string(body)})
+			followerEntry := FollowerInput{
+				Follower:  res.BusinessDiscovery.FollowerCount,
+				AccountID: account.ID,
+			}
+			update = append(update, followerEntry)
+		}
+	}
+
+	for _, newFollower := range update {
+		var input FollowerInput
+
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		f := models.Follower{}
+		f.Follower = newFollower.Follower
+		f.AccountID = newFollower.AccountID
+
+		_, err := f.SaveFollower()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+
+	fmt.Println(update)
 
 	//Facebook API
 	//resp, err := http.Get("https://graph.facebook.com/PAGE_ID/insights?metric=page_follows&access_token=ACCESS_TOKEN")
@@ -78,15 +135,6 @@ func Daily(c *gin.Context) {
 	//Twitter API
 	//resp, err := http.Get("https://api.twitter.com/2/users/[ID]?user.fields=public_metrics")
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-	//We Read the response body on the line below.
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": string(body)})
+	c.JSON(http.StatusOK, gin.H{"data": "Follower count updated successfully."})
 
 }

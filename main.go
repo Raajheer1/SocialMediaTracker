@@ -4,6 +4,7 @@ import (
 	"SocialMediaTracker/controllers"
 	"SocialMediaTracker/middlewares"
 	"SocialMediaTracker/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,13 +21,21 @@ func main() {
 
 	protected := r.Group("/api/admin")
 	protected.Use(middlewares.JwtAuthMiddleware())
+	// User routes
 	protected.GET("/user", controllers.CurrentUser)
+
+	// Social Media Account routes
+	protected.POST("/accounts", controllers.RegisterAccount)
 
 	protected.GET("/followers", controllers.GetFollowers)
 	protected.POST("/followers", controllers.AddFollower)
 
 	public.POST("/daily", controllers.Daily)
 
-	r.Run(":8080")
+	err := r.Run(":8080")
+	if err != nil {
+		fmt.Println("Error starting server.")
+		return
+	}
 
 }

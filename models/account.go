@@ -28,11 +28,20 @@ func GetAccountByID(aid uint) (Account, error) {
 func GetAccountByHandle(aHandle string, aPlatform string) (Account, error) {
 	var a Account
 
-	if err := DB.Where("Handle = ? AND Platform >= ?", aHandle, aPlatform).First(&a).Error; err != nil {
+	if err := DB.Where("Handle = ? AND Platform = ?", aHandle, aPlatform).First(&a).Error; err != nil {
 		return a, errors.New("Account not found!")
 	}
 
 	return a, nil
+}
+
+func GetAllAccounts() ([]Account, error) {
+	var accounts []Account
+	if err := DB.Find(&accounts).Error; err != nil {
+		return accounts, errors.New("Error pulling all accounts!")
+	}
+
+	return accounts, nil
 }
 
 func (a *Account) SaveAccount() (*Account, error) {
