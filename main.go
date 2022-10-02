@@ -25,7 +25,7 @@ func main() {
 	protected.GET("/user", controllers.CurrentUser)
 
 	// Social Media Account routes
-	protected.POST("/accounts", controllers.RegisterAccount)
+	public.POST("/accounts", controllers.RegisterAccount)
 
 	protected.GET("/followers", controllers.GetFollowers)
 	protected.POST("/followers", controllers.AddFollower)

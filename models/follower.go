@@ -9,7 +9,7 @@ type Follower struct {
 	ID        uint `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Follower  uint `gorm:"size:255;not null;unique" json:"follower"`
+	Follower  uint `gorm:"size:255;not null" json:"follower"`
 	AccountID uint
 }
 

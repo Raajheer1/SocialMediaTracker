@@ -40,5 +40,6 @@ func ConnectDataBase() {
 
 	DB.AutoMigrate(&User{})
 	DB.AutoMigrate(&Account{})
+	DB.AutoMigrate(&Follower{})
 
 }

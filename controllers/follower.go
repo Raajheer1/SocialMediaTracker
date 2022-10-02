@@ -68,7 +68,7 @@ func GetFollowers(c *gin.Context) {
 
 type IGResponse struct {
 	BusinessDiscovery struct {
-		FollowerCount uint `json:"follower_count"`
+		FollowerCount uint `json:"followers_count"`
 	} `json:"business_discovery"`
 }
 
@@ -84,7 +84,7 @@ func Daily(c *gin.Context) {
 
 	for _, account := range accounts {
 		if account.Platform == "IG" {
-			resp, err := http.Get(fmt.Sprintf("https://graph.facebook.com/v15.0/17841405309211844?fields=business_discovery.username(%s){followers_count,media_count}&access_token=%s", account.Handle, AccessToken))
+			resp, err := http.Get(fmt.Sprintf("https://graph.facebook.com/v15.0/17841454380310710?fields=business_discovery.username(%s){followers_count,media_count}&access_token=%s", account.Handle, AccessToken))
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			}
@@ -109,12 +109,6 @@ func Daily(c *gin.Context) {
 	}
 
 	for _, newFollower := range update {
-		var input FollowerInput
-
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
 
 		f := models.Follower{}
 		f.Follower = newFollower.Follower
@@ -123,11 +117,10 @@ func Daily(c *gin.Context) {
 		_, err := f.SaveFollower()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
 		}
 	}
 
-	fmt.Println(update)
+	//fmt.Println(update)
 
 	//Facebook API
 	//resp, err := http.Get("https://graph.facebook.com/PAGE_ID/insights?metric=page_follows&access_token=ACCESS_TOKEN")
